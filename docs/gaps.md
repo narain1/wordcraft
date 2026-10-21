@@ -201,3 +201,8 @@ The Language dialog reads effective character formatting, including document def
 | 2026-10-12 | trivial | #21: .xls workbooks and GBK/Big5/Shift_JIS/UTF-16 text lists as recipients; Filter and Sort in Edit Recipient List (#778) |
 | 2026-10-12 | trivial | #811: large-table scrolling fixed; performance gap (#20) narrowed |
 | 2026-10-12 | trivial | #13: radar, stock and other undrawn chart types show a placeholder instead of blank space (#998) |
+
+
+## Library contribution update — 2026-10-21
+
+Within layout/PDF fidelity, preset-shape PDF outlines now explicitly use the raster renderer's round caps and joins. The original default mismatch is covered by an exported-stroke regression and a separate synthetic rendering comparison. The full layout gap remains open. This does not change arbitrary vector paths, shape-effect silhouettes, DOCX outline-width clamping or thick-ellipse self-overlap behavior; no new Word comparison or desktop measurement was performed.

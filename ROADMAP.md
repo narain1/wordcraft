@@ -592,3 +592,8 @@ Ranked, to beta (detail and remaining milestones in [docs/roadmap.md](docs/roadm
 | 2026-10-09 | minor | Recently landed: RTL, Ukrainian and Brazilian Portuguese |
 | 2026-10-06 | major | First honest estimate: 88% catalog, ~62% real parity, alpha ~85% of the way |
 | 2026-10-12 | trivial | Progress log: recipient filter and sort, .xls and legacy-encoding recipient lists (#778) |
+
+
+## Library contribution validation — 2026-10-21
+
+The PDF shape-stroke contribution aligns preset-shape line caps and joins with the native raster renderer. Its regression interprets actual exported PDF strokes for Rectangle, Ellipse and Line at four widths; all 39 original PDF tests and the added regression pass. This is a library correction, not a new desktop parity measurement or a change to the alpha stage. See [the bounded shape checks](docs/layout-parity.md#pdf-shape-stroke-contribution--2026-10-21).
