@@ -368,3 +368,14 @@ and balloon layout while supplying explicit cell identity at every box call. The
 probes above are historical; this rebase has no new native or other-platform measurement.
 
 Repeated table-cell control, 12 October 2026: four same-style contextual paragraphs with 6 pt before/after and exactly 24 pt lines retain zero extra gap at every boundary. The body control uses the same fixture. This is an original specification-based regression; no new native Word table comparison was run.
+
+
+## PDF shape-stroke contribution — 2026-10-21
+
+`Draw::Shape` PDF export now explicitly uses round line caps and joins, matching the raster renderer's `kurbo::Stroke::new` contract. `crates/pdf/src/tests_shape_stroke.rs` interprets the actual exported PDF path state for Rectangle, Ellipse and Line at 0.25, 2, 100 and 200 points. The original revision fails the new regression; the contribution passes all 40 PDF tests. No path geometry, width policy, fill, layout or OOXML serializer changes.
+
+An external integration probe compares native raster output with exported PDF reopened through PdfCraft at 72, 144 and 300 DPI, before and after DOCX serialization. For a 160-by-100-point stroke-only shape, all 54 comparisons at 0.25, 2 and 100 points pass the fixed two-pixel coverage-mask gate after the change (40 passed before). Large-stroke round-corner and line-endpoint positive/negative regions are checked separately. All 72 native raster artifacts remain byte-identical. An unrelated freeform-path and bold/underlined-text control has identical raster output at all three DPIs; PDF drawing bytes are identical after normalizing only automatic timestamps and their derived document IDs.
+
+The 200-point diagnostics are deliberately excluded from DOCX fidelity acceptance: its writer/reader clamp outlines to 100 points, and the source 200-point ellipse still differs between raster and PDF. The outline-to-shape size ratio and extreme aspect ratios need separate bounded evidence. No pixel-perfect or arbitrary-shape guarantee is made. Shape effects and `Draw::Path` retain their previous behavior.
+
+Library formatting and package-only strict Clippy pass. Ordinary dependency-inclusive strict Clippy fails the same two pre-existing `wordcraft-doc/src/math_linear.rs:559` boolean-expression warnings on both the original and candidate source. This is not a claim that the full desktop workspace or its application gates passed.

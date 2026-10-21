@@ -304,3 +304,9 @@ Footer page-table height and body wrapping are corrected. Other pagination gaps 
 ## Layout validation fonts
 
 Four geometry-dependent regression controls request Source Sans 3 explicitly. Platform-installed substitutes otherwise change their expected line counts. Assertions remain unchanged; renderer font metrics and substitution gaps remain open.
+
+
+
+## Library contribution update — 2026-10-21
+
+Within layout/PDF fidelity, preset-shape PDF outlines now explicitly use the raster renderer's round caps and joins. The original default mismatch is covered by an exported-stroke regression and a separate synthetic rendering comparison. The full layout gap remains open. This does not change arbitrary vector paths, shape-effect silhouettes, DOCX outline-width clamping or thick-ellipse self-overlap behavior; no new Word comparison or desktop measurement was performed.

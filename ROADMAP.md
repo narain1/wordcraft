@@ -891,3 +891,9 @@ Footer page-table height and body wrapping are corrected. Other pagination gaps 
 | 2026-10-17 | trivial | Progress log: saving into a folder that refuses a temporary file (#2138) |
 | 2026-10-19 | trivial | Progress log: personal templates in File › New, Save as Word Template (#2852) |
 | 2026-10-20 | trivial | Progress log: saving to a NAS share mounted by GVFS (#3003) |
+
+
+
+## Library contribution validation — 2026-10-21
+
+The PDF shape-stroke contribution aligns preset-shape line caps and joins with the native raster renderer. Its regression interprets actual exported PDF strokes for Rectangle, Ellipse and Line at four widths; all 39 original PDF tests and the added regression pass. This is a library correction, not a new desktop parity measurement or a change to the alpha stage. See [the bounded shape checks](docs/layout-parity.md#pdf-shape-stroke-contribution--2026-10-21).
