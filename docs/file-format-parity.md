@@ -2,6 +2,10 @@
 
 > **Last reviewed:** 2026-10-11 · **Last updated:** 2026-10-21 · **Change:** trivial (a document with many content controls saves in the time the controls take, #13; previously trivial: `majorBidi`/`minorBidi` theme fonts follow the settings' theme font language, as measured in Word; previously trivial: Word signature lines are kept on save, still signable; previously trivial: Times New Roman keeps Liberation Serif under the roman-font rule; previously trivial: shape gradients and transparency, #1500; previously trivial: a folder that keeps no Unix modes, such as a NAS share mounted by GVFS, still takes a save, #3003; previously trivial: a text frame in the paragraph defaults frames nothing, #2360; previously trivial: table style band sizes written, a style without them unbanded as in Word, #3415; previously trivial: HTML export writes ruby (furigana, phonetic guides) and HTML import reads it back, #1681; previously trivial: RTF import decodes the East Asian multibyte code pages, #1653; previously trivial: PDF export: lam-alef drawn as two glyphs at one x extracts in reading order, #2310; previously trivial: native .json stores pictures and kept parts as base64, #586 follow-up; previously trivial: ODT headers and footers read from each master page, #863; previously trivial: RTF import compares heading and code formatting with the file's stylesheet; previously trivial: text typed into a content control takes the control's formatting; localized placeholder styles recognised; previously trivial: forms protection keeps its content controls: no inserting, Properties or Remove Content Control; previously trivial: Word XML and web pages saved as `.doc` open by what they hold, #2853; previously trivial: a VML shape in a header cell is always placed on the page, user-checked in Word for Mac, #1775; previously trivial: `w:sym` characters keep their symbol font when the text's font changes and are written back as `w:sym`, #2036; previously trivial: RTF export writes sections (gap 19); previously trivial: ODT export writes sections (gap 19); previously trivial: two lines in one and horizontal in vertical (`w:eastAsianLayout`) kept on save; previously trivial: PDF outline targets follow leading page breaks; previously trivial: positional tabs `w:ptab` read and kept on save, #2367; previously trivial: DOCX: mixed right-to-left runs split and marked `w:rtl` with their language, #1543; previously trivial: `w:doNotTrackMoves` round-trips and turns move tracking off; previously trivial: legacy outline, shadow, emboss and imprint text effects drawn, #2534; previously trivial: DOCX glossary documents (building blocks) read, kept and written; previously trivial: cached field results keep their visible run formatting; previously trivial: cached REF results retain hyperlink destinations; previously trivial: CLI conversions can explicitly refresh fields; previously trivial: a copied equation also goes in the clipboard's MathML formats, #1297; previously trivial: a pasted HTML `<blockquote>` is an indented paragraph, not the Quote style, #1270); previously trivial: every table style part round-trips, #714; previously trivial: VML freeforms read and kept on save; previously trivial: multi-paragraph field instructions no longer add blank lines; previously trivial: `flowChartOr` draws its circle and cross spokes, as in Word; previously trivial: RTF: Mac OS Roman and DOS text, #1653; previously trivial: VML text boxes keep their internal margins, fit to their text and vertical alignment; hidden drawings not shown; previously trivial: PDF export draws horizontal and vertical lines inside groups, #1474; previously trivial: symbol-font text exported as Unicode, #776; previously trivial: text-box margins, Resize shape to fit text and freeforms in groups, #743; previously trivial: formatted paste from the system clipboard's HTML and RTF, #687; previously trivial: independent complex-script formatting inheritance and round-trip regression tests; previously trivial: import/export fixes for TXT, RTF, ODT, HTML and LaTeX, #433–#440; previously major: first version; every format Word reads or writes, measured from the readers and writers on origin/main) · **Target:** Microsoft Word (Microsoft 365) for Mac 16.113.4, plus Word for Windows' extra formats
 
+> **Preservation update:** 2026-10-21 · omitted DOCX character-default size keeps inheritance; explicit compatibility note and synthetic evidence below.
+
+> **Last reviewed:** 2026-10-11 · **Last updated:** 2026-10-14 · **Change:** trivial (every table style part round-trips, #714); previously trivial: VML freeforms read and kept on save; previously trivial: multi-paragraph field instructions no longer add blank lines; previously trivial: `flowChartOr` draws its circle and cross spokes, as in Word; previously trivial: RTF: Mac OS Roman and DOS text, #1653; previously trivial: VML text boxes keep their internal margins, fit to their text and vertical alignment; hidden drawings not shown; previously trivial: PDF export draws horizontal and vertical lines inside groups, #1474; previously trivial: symbol-font text exported as Unicode, #776; previously trivial: text-box margins, Resize shape to fit text and freeforms in groups, #743; previously trivial: formatted paste from the system clipboard's HTML and RTF, #687; previously trivial: independent complex-script formatting inheritance and round-trip regression tests; previously trivial: import/export fixes for TXT, RTF, ODT, HTML and LaTeX, #433–#440; previously major: first version; every format Word reads or writes, measured from the readers and writers on origin/main) · **Target:** Microsoft Word (Microsoft 365) for Mac 16.113.4, plus Word for Windows' extra formats
+
 Every format Word opens or saves, what WordCraft does with it, and how it's tested. Fidelity is the
 share of a typical real-world file's content and formatting that survives (read: shows correctly;
 write: Word opens it showing the same). Summary in [`target-app-parity.md`](target-app-parity.md);
@@ -144,6 +148,35 @@ register WordCraft for these types but never take over a default; File › Optio
 | Windows (MSI) | `.docx` `.docm` `.dotx` `.dotm` `.doc` `.dot` `.rtf` `.odt`; `.md` `.txt` under Open With only | Options button opens Settings › Default apps on WordCraft's page | One ProgId per type, `OpenWithProgids`, Capabilities + `RegisteredApplications` (`packaging/windows/wordcraft.wxs`). Not yet tried on a real install |
 | Linux, BSD (deb, rpm, Flatpak, AppImage) | Word, ODT, RTF, Markdown, LaTeX, HTML, text (`MimeType=` in the desktop entry, AppStream `mediatype`) | Options button runs `xdg-mime default` for the Word, RTF and ODT types | Not from inside Flatpak (the sandbox can't change host defaults); a bare AppImage needs desktop integration first |
 | macOS | `CFBundleDocumentTypes` as Alternate handler (Word, ODT, RTF, Markdown, HTML, text) | Finder › Get Info › Open with › Change All (the Options page says so) | Apple events open the files (#27) |
+
+## Character-default size preservation
+An omitted document-default `w:sz` stays absent through repeated DOCX saves. The
+existing style resolver supplies 11 pt only when the applicable default, table,
+paragraph, character and direct properties supply no ordinary size. Missing
+`w:szCs` inherits the effective ordinary size; an explicit complex-script size
+remains independent. The writer continues to emit only explicit size properties.
+
+**Compatibility change:** files with a parsed styles part and no effective size
+previously acquired a reader-only 10 pt fallback. They now use the native resolver's
+11 pt policy. A missing styles part still starts from the existing 12 pt built-in
+defaults; explicit sizes and ordinary new-document defaults are unchanged. The
+shared reader also handles Flat OPC packages and converted Word 2003 XML: the
+same absent-size policy applies there. Word 2003 XML conversion creates a styles
+part even when its input has no styles node, so that case uses 11 pt rather than
+the missing-package-part 12 pt control. No format writer or XML conversion
+algorithm changes. The
+[public FontSize remarks](https://learn.microsoft.com/en-us/dotnet/api/documentformat.openxml.wordprocessing.fontsize?view=openxml-3.0.1)
+permit application choice when no hierarchy level provides a size. This is native
+self-consistency, not a claim that OOXML mandates 11 pt or that Word always uses it.
+
+`absent_character_default_size_survives_repeated_saves` and
+`absent_character_size_keeps_style_and_complex_script_precedence` cover absent
+containers, explicit 10/11/28 pt controls, three save/reopen cycles, unrelated
+properties, inherited/direct formatting, and implicit/explicit Flat OPC and Word
+2003 XML controls. Separate synthetic native rendering
+checks cover body/header/table text, explicit styles and a linked run before and
+after DOCX reopening, including PDF output at 72/144/300 DPI. These bounded checks
+do not close the real-world fidelity corpus or establish cross-platform font parity.
 
 ## Paragraph-default preservation
 The styles reader records whether `w:pPrDefault` exists. The writer keeps an omitted
@@ -299,6 +332,8 @@ Imported text fields use the first nonempty cached result run's formatting on th
 | 2026-10-13 | trivial | Recipient lists: cell text capped at 64 MiB a sheet (shared-string amplification), an XML spreadsheet named .xls explained (#1287) |
 | 2026-10-16 | trivial | A `w:framePr` in `w:pPrDefault` (Apple Pages writes a sizeless one at the top left) frames no paragraph and isn't written back, as Word ignores it; headers, footers and table rows of such files lay out as in Word (#2360) |
 | 2026-10-15 | trivial | Native .json writes pictures and kept parts as base64 text instead of arrays of numbers (a 27 MiB picture: 36 MiB instead of 286 MiB); files with the old arrays still open (#586 follow-up) |
+
+| 2026-10-21 | minor | Omitted DOCX character-default size stays inherited across saves; imported implicit fallback changes from 10 to the native resolver's 11 pt. Explicit sizes and missing-styles 12 pt defaults remain unchanged; synthetic checks do not raise readiness estimates. |
 | 2026-10-13 | trivial | A cell's explicit top vertical alignment (`w:vAlign w:val="top"`) is kept on read and write and beats a table style that centres or bottom-aligns (#1288) |
 | 2026-10-14 | trivial | Row table border exceptions survive DOCX saves |
 | 2026-10-12 | trivial | Fields keep `w:dirty` through DOCX round trips — on buffered fields and range-field begin markers alike — and computing a result (Update Field, Update Table) clears it like Word's F9, so a generator's placeholder TOC still refreshes when Word opens the file until WordCraft replaces the placeholder (#877) |

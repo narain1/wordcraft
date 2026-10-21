@@ -3914,3 +3914,139 @@ fn vml_textbox_style_anchor_and_fit() {
     assert_eq!(tb.body.anchor, wordcraft_doc::props::VAlign::Center);
     assert!(tb.body.auto_fit);
 }
+
+#[test]
+fn absent_character_default_size_survives_repeated_saves() {
+    // No styles part keeps the existing built-in 12 pt initialization. This
+    // separate policy is not changed by preserving absence in a parsed part.
+    let no_styles = read_body("<w:p><w:r><w:t>NoStyles</w:t></w:r></w:p>");
+    assert_eq!(no_styles.styles.default_chr.size, Some(12.0));
+    assert_eq!(no_styles.styles.resolve_char(None, &Default::default()).size, 12.0);
+    let no_styles_again = wordcraft_docx::read(&wordcraft_docx::write(&no_styles).unwrap()).unwrap();
+    assert_eq!(no_styles_again.styles.default_chr.size, Some(12.0));
+
+    // Both public XML readers reach the same package-style reader. Word 2003
+    // conversion creates a styles part even when the XML has no styles node;
+    // it must not be confused with a ZIP package missing its styles part.
+    let mut xml_observed = Vec::new();
+    let mut xml_expected = Vec::new();
+    for size in [Some(10.0), Some(11.0), Some(28.0), None] {
+        let mut flat = Document::new();
+        flat.styles.default_chr.size = size;
+        let flat = wordcraft_docx::read_xml(&wordcraft_docx::write_flat(&flat).unwrap()).unwrap();
+        xml_observed.push(("FlatOpc", size, flat.styles.default_chr.size, flat.styles.resolve_char(None, &Default::default()).size));
+        xml_expected.push(("FlatOpc", size, size, size.unwrap_or(11.0)));
+        let styles = size.map(|n| format!(r#"<w:styles><w:style w:type="paragraph" w:styleId="Normal" w:default="on"><w:name w:val="Normal"/><w:rPr><w:sz w:val="{}"/></w:rPr></w:style></w:styles>"#, (n * 2.0) as u32)).unwrap_or_default();
+        let xml = format!(
+            r#"<w:wordDocument xmlns:w="http://schemas.microsoft.com/office/word/2003/wordml">{styles}<w:body><w:p><w:r><w:t>XmlKeep</w:t></w:r></w:p></w:body></w:wordDocument>"#
+        );
+        let word2003 = wordcraft_docx::read_xml(xml.as_bytes()).unwrap();
+        assert_eq!(paras(&word2003)[0].text, "XmlKeep");
+        xml_observed.push(("WordMl2003", size, word2003.styles.default_chr.size, word2003.styles.resolve_char(None, &Default::default()).size));
+        xml_expected.push(("WordMl2003", size, None, size.unwrap_or(11.0)));
+    }
+    // Retain all shared-reader observations if the old ZIP-DOCX assertion below
+    // fails before the final vector check; explicit cases remain visible too.
+    eprintln!("shared XML reader size controls: {xml_observed:?}");
+
+    // Explicit sizes run first so the original reader also executes these
+    // unchanged controls before the absent-size regression fails.
+    for (defaults, size, para_present, after, bold) in [
+        (r#"<w:docDefaults><w:rPrDefault><w:rPr><w:sz w:val="20"/></w:rPr></w:rPrDefault></w:docDefaults>"#, Some(10.0), false, None, None),
+        (r#"<w:docDefaults><w:rPrDefault><w:rPr><w:sz w:val="22"/></w:rPr></w:rPrDefault></w:docDefaults>"#, Some(11.0), false, None, None),
+        (
+            r#"<w:docDefaults><w:rPrDefault><w:rPr><w:sz w:val="56"/><w:b/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="160"/></w:pPr></w:pPrDefault></w:docDefaults>"#,
+            Some(28.0),
+            true,
+            Some(8.0),
+            Some(true),
+        ),
+        ("", None, false, None, None),
+        ("<w:docDefaults/>", None, false, None, None),
+        ("<w:docDefaults><w:rPrDefault/></w:docDefaults>", None, false, None, None),
+        ("<w:docDefaults><w:rPrDefault><w:rPr/></w:rPrDefault></w:docDefaults>", None, false, None, None),
+        ("<w:docDefaults><w:rPrDefault><w:rPr><w:b/></w:rPr></w:rPrDefault><w:pPrDefault/></w:docDefaults>", None, true, None, Some(true)),
+    ] {
+        let styles = format!(
+            r#"<w:styles {W_NS}>{defaults}<w:style w:type="paragraph" w:styleId="Normal" w:default="1"><w:name w:val="Normal"/></w:style></w:styles>"#
+        );
+        let mut d = wordcraft_docx::read(&docx(
+            "<w:p><w:r><w:t>SizeKeep</w:t></w:r></w:p>",
+            &[("rId1", "styles", "styles.xml")],
+            &[("word/styles.xml", &styles)],
+        ))
+        .unwrap();
+        for cycle in 0..3 {
+            assert_eq!(d.styles.default_chr.size, size, "cycle {cycle}: {defaults}");
+            assert_eq!(d.styles.default_chr.bold, bold);
+            assert_eq!(d.styles.default_para_present, para_present);
+            assert_eq!(d.styles.default_para.space_after, after);
+            assert_eq!(d.styles.resolve_char(None, &Default::default()).size, size.unwrap_or(11.0));
+            let original_char = d.styles.default_chr.clone();
+            let original_para = d.styles.default_para.clone();
+            let bytes = wordcraft_docx::write(&d).unwrap();
+            let xml = text(&unzip(&bytes), "word/styles.xml");
+            let default_rpr = xml.split("<w:rPrDefault>").nth(1).unwrap().split("</w:rPrDefault>").next().unwrap();
+            assert_eq!(default_rpr.contains("<w:sz "), size.is_some());
+            d = wordcraft_docx::read(&bytes).unwrap();
+            assert_eq!(d.styles.default_chr, original_char);
+            assert_eq!(d.styles.default_para, original_para);
+            assert_eq!(paras(&d).iter().map(|p| p.text.as_str()).collect::<Vec<_>>(), ["SizeKeep"]);
+        }
+    }
+    assert_eq!(xml_observed, xml_expected);
+}
+
+#[test]
+fn absent_character_size_keeps_style_and_complex_script_precedence() {
+    use wordcraft_doc::props::CharProps;
+    for (ordinary, complex) in [(Some(10.0), Some(13.0)), (Some(11.0), None), (Some(28.0), Some(15.0)), (None, Some(13.0)), (None, None)] {
+        let sz = ordinary.map(|s| format!(r#"<w:sz w:val="{}"/>"#, (s * 2.0) as u32)).unwrap_or_default();
+        let sz_cs = complex.map(|s| format!(r#"<w:szCs w:val="{}"/>"#, (s * 2.0) as u32)).unwrap_or_default();
+        let styles = format!(
+            r#"<w:styles {W_NS}>
+<w:docDefaults><w:rPrDefault><w:rPr>{sz}{sz_cs}<w:color w:val="123456"/></w:rPr></w:rPrDefault></w:docDefaults>
+<w:style w:type="paragraph" w:styleId="Normal" w:default="1"><w:name w:val="Normal"/></w:style>
+<w:style w:type="paragraph" w:styleId="Base"><w:name w:val="Base"/><w:basedOn w:val="Normal"/><w:rPr><w:sz w:val="28"/><w:b/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="Derived"><w:name w:val="Derived"/><w:basedOn w:val="Base"/><w:rPr><w:sz w:val="36"/></w:rPr></w:style>
+<w:style w:type="character" w:styleId="Accent"><w:name w:val="Accent"/><w:rPr><w:sz w:val="40"/><w:szCs w:val="42"/></w:rPr></w:style>
+<w:style w:type="table" w:styleId="SizeTable"><w:name w:val="SizeTable"/><w:rPr><w:sz w:val="32"/><w:szCs w:val="34"/></w:rPr></w:style>
+</w:styles>"#
+        );
+        let mut d = wordcraft_docx::read(&docx(r#"<w:p><w:pPr><w:pStyle w:val="Derived"/></w:pPr><w:r><w:rPr><w:rStyle w:val="Accent"/><w:sz w:val="48"/><w:szCs w:val="50"/></w:rPr><w:t>OverrideKeep</w:t></w:r></w:p>"#, &[("rId1", "styles", "styles.xml")], &[("word/styles.xml", &styles)])).unwrap();
+        for _ in 0..3 {
+            assert_eq!(d.styles.default_chr.size, ordinary);
+            assert_eq!(d.styles.default_chr.size_cs, complex);
+            let pair = |p: Option<&str>, table: Option<&CharProps>, direct: &CharProps| {
+                let r = d.styles.resolve_char_in(p, table, direct);
+                (r.size, r.size_cs)
+            };
+            let empty = CharProps::default();
+            let table = d.styles.table_style("SizeTable").unwrap();
+            assert_eq!((table.chr.size, table.chr.size_cs), (Some(16.0), Some(17.0)));
+            assert_eq!(pair(None, None, &empty), (ordinary.unwrap_or(11.0), complex.or(ordinary).unwrap_or(11.0)));
+            assert_eq!(pair(Some("Base"), None, &empty), (14.0, complex.unwrap_or(14.0)));
+            assert_eq!(pair(Some("Derived"), None, &empty), (18.0, complex.unwrap_or(18.0)));
+            assert_eq!(pair(None, Some(&table.chr), &empty), (16.0, 17.0));
+            assert_eq!(pair(Some("Derived"), Some(&table.chr), &empty), (18.0, 17.0));
+            let accent = CharProps { style: Some("Accent".into()), ..Default::default() };
+            assert_eq!(pair(Some("Derived"), Some(&table.chr), &accent), (20.0, 21.0));
+            let ordinary_only = CharProps { size: Some(24.0), ..Default::default() };
+            assert_eq!(pair(None, None, &ordinary_only), (24.0, complex.unwrap_or(24.0)));
+            let complex_only = CharProps { size_cs: Some(25.0), ..Default::default() };
+            assert_eq!(pair(None, None, &complex_only), (ordinary.unwrap_or(11.0), 25.0));
+            let direct = CharProps { size: Some(24.0), size_cs: Some(25.0), ..accent };
+            assert_eq!(pair(Some("Derived"), Some(&table.chr), &direct), (24.0, 25.0));
+            let p = paras(&d)[0];
+            assert_eq!(p.props.style.as_deref(), Some("Derived"));
+            assert_eq!(p.runs.len(), 1);
+            assert_eq!(p.runs[0].props.style.as_deref(), Some("Accent"));
+            assert_eq!((p.runs[0].props.size, p.runs[0].props.size_cs), (Some(24.0), Some(25.0)));
+            assert_eq!(p.text, "OverrideKeep");
+            let default_chr = d.styles.default_chr.clone();
+            let saved = wordcraft_docx::write(&d).unwrap();
+            d = wordcraft_docx::read(&saved).unwrap();
+            assert_eq!(d.styles.default_chr, default_chr);
+        }
+    }
+}

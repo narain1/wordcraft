@@ -915,9 +915,8 @@ impl Reader<'_> {
                 sheet.default_para.frame = None;
             }
         }
-        if sheet.default_chr.size.is_none() {
-            sheet.default_chr.size = Some(10.0);
-        }
+        // Keep an omitted size inherited. Materializing a reader-only default
+        // would disagree with the model resolver on a write/read round trip.
         // Built-in styles' behaviour (gallery, priority, visibility), written back as is.
         sheet.latent_styles = root.child("w:latentStyles").map(|l| l.to_xml()).filter(|x| x.len() <= MAX_LATENT_STYLES_XML);
         for s in root.children("w:style").take(10_000) {
