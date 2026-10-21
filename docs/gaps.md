@@ -330,3 +330,13 @@ PDF language tagging and desktop command coverage remain separate. Synthetic
 model, package and rendering controls are described in
 [file-format parity](file-format-parity.md#core-document-language-metadata--2026-10-21);
 the real-world corpus and overall format-fidelity gaps remain open.
+
+## Retained extended metadata access — 2026-10-21
+
+A strict lower-level library API now exposes four retained text and four retained
+boolean extended properties without callers depending on private storage. It
+rejects ambiguous or malformed retained state atomically; it cannot recover or
+report values already omitted by the legacy reader. Custom properties, complete
+source inventories, writable computed statistics and desktop metadata commands
+remain separate gaps. This is a bounded access improvement, not a global
+reader/writer normalization or a new fidelity/readiness measurement.

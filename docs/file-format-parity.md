@@ -491,3 +491,73 @@ Imported text fields use the first nonempty cached result run's formatting on th
 | 2026-10-18 | trivial | Word 2007 WordArt (VML `v:textpath` in the body or a header logo) shown as a text box with its text, font, colour and warp, not dropped (#2875) |
 | 2026-10-20 | trivial | A folder that keeps no Unix modes (a NAS share mounted by GVFS) still takes a save instead of failing with "Operation not supported" (#3003) |
 | 2026-10-16 | trivial | Word's Table of Contents content control (`w:docPartObj`) is kept around a TOC that isn't in the heading-and-entries form (#2427) |
+
+
+## Typed retained extended properties — 2026-10-21
+
+`wordcraft-docx::extended_properties` returns an owned `ExtendedProperties`
+snapshot. `patch_extended_properties` accepts at most eight unique
+`ExtendedPropertyPatch` variants. The four text values are Template, Manager,
+Company and HyperlinkBase; the four booleans are ScaleCrop, LinksUpToDate,
+SharedDoc and HyperlinksChanged. An omitted patch leaves a property untouched;
+`None` clears it; empty text remains distinct from absence. No arbitrary property
+name, private manifest or XML escape hatch is exposed.
+
+The strict API validates the entire retained record before any update, including
+empty, clearing and semantic no-op patches. It checks a derived raw-byte cap
+before UTF8 parsing, then at most eight unique supported records, separators,
+2048 UTF8 bytes per text value, controls and the existing native XML-character
+predicate. Invalid UTF8, duplicates, unknown names, invalid boolean values and
+unsupported scalars return typed errors without mutating the document. The parser
+uses borrowed fixed-size arrays; snapshot/replacement allocation follows bounded
+validation. Exact boolean strings `true`, `false`, `1`, `0` are admitted. Changed
+booleans use `true`/`false`; unchanged values retain lexical form and record order.
+Semantic no-ops preserve original bytes and sharing. New fields append in native
+property order; clearing the last field removes only the retained record.
+
+This is a view of retained model state, not a source-completeness report. The
+ordinary reader and writer are unchanged. Existing duplicate records consume
+first-eight save slots, a ninth record can be dropped, invalid legacy booleans
+can pass through, and unknown/oversized/separator-containing source properties
+can be omitted before the strict API sees them. The opt-in API refuses invalid
+retained state rather than repairing it. It does not certify source namespaces.
+Computed Application, Words, Paragraphs and DocSecurity remain native writer
+outputs; source Pages, Lines, Characters, TotalTime and AppVersion are not new
+writable fields. Privacy filtering still removes Manager/Company at save time;
+the pre-save snapshot retains them. Custom metadata and Word 2003 XML are outside
+this contribution.
+
+Validation uses the exact same public consumer as an old-pin compile-negative
+API-availability control; no old typed setter or default-writer correction is
+invented. The prior native suites plus one unchanged legacy diagnostic pass
+460 tests; the candidate passes 465 (146 model and 319 DOCX). Six legacy output
+artifacts, including duplicate/first-eight and malformed-scalar diagnostics, are
+byte-identical across revisions. Candidate acceptance covers all eight values,
+empty/non-BMP text, exact and over-limit bounds, full-model/Arc atomicity, cloned
+owners, semantic no-ops, repeated DOCX/Flat OPC roundtrips and privacy semantics.
+A first test compared reopened paragraph revision IDs with an authored model;
+the corrected control roundtrips an unchanged document identically and compares
+all non-app package parts and corresponding model state. Same-model add/clear
+restores exact original output independently of native read normalization.
+
+A bounded rich output fixture contains distinct positive body/header/style/table
+text, a hyperlink and an image. The candidate raw gate passes at 72/144/300 DPI,
+with 144/144 symmetric two-pixel color-mask/geometry comparisons across native
+and PDF raster output, before/after DOCX reopening. Twelve corresponding rasters
+are byte-identical between absent and populated metadata profiles. The unchanged
+original fixture also passes on the prior revision: its twelve PNGs, original
+DOCX bytes and two model/selection/text/link records exactly match the candidate.
+Same-model empty/same-value patches and clear-to-original bytes are checked
+separately; privacy has property/package controls, not a separate rendered profile.
+Independent replay passes the six new native tests and final output gate, with
+the same 144/144 rendered comparisons. The validation-only harness initially had
+a module-registration/reference compile error and a needless-borrow lint; both
+were corrected without native production changes, and the final harness passes
+strict package Clippy. No full package corpus or Python API admission is claimed
+by this native contribution.
+
+Native formatting passes. Strict native Clippy stops at the pre-existing
+`nonminimal_bool` document math diagnostic. A diagnostic run allowing only that
+lint and the known `collapsible_match` DOCX story lint passes on both revisions. No dependency manifest, lockfile or asset changes are part of
+this contribution. These are synthetic library checks, not a full Word corpus,
+new desktop coverage or an overall parity estimate.

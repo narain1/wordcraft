@@ -11,6 +11,7 @@ mod bibliography;
 mod chart_spec;
 mod crypt;
 mod custom;
+mod extended_properties;
 mod flat;
 mod fonts;
 mod package;
@@ -28,6 +29,7 @@ pub use crypt::{
     DEFAULT_SPIN_COUNT, MAX_PASSWORD_CHARS, PasswordCheck, check_password, check_protection_password, decrypt, encrypt, encrypt_with_spin_count,
     is_encrypted, protection_hash,
 };
+pub use extended_properties::{ExtendedProperties, ExtendedPropertiesError, ExtendedPropertyPatch, extended_properties, patch_extended_properties};
 pub use flat::{XmlKind, sniff_xml, write as write_flat};
 pub use fonts::{EmbeddedFont, embedded_fonts};
 pub use read::read;
