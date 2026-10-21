@@ -613,3 +613,11 @@ controls pass; strict native lint retains documented pre-existing diagnostics.
 See [the exact contract and evidence](docs/file-format-parity.md#core-document-language-metadata--2026-10-21).
 This adds no desktop command or broader format/parity claim; alpha/readiness
 estimates remain unchanged.
+
+## Typed retained extended metadata — 2026-10-21
+
+The lower-level DOCX crate now provides an opt-in typed snapshot and atomic patch
+for its eight retained extended properties. This does not change ordinary import
+or save policy, computed statistics, privacy filtering, or desktop commands.
+See [the bounded contract and synthetic evidence](docs/file-format-parity.md#typed-retained-extended-properties--2026-10-21).
+Readiness estimates and broader metadata/format gaps remain unchanged.

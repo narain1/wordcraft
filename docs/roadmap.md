@@ -105,3 +105,12 @@ languages, screen-reader access, ecosystem decisions (VBA, add-ins, cloud), an i
 | 2026-10-10 | major | Created: milestones moved from ROADMAP.md with remaining hours; Current focus from gaps.md; M15–M16 added |
 | 2026-10-10 | trivial | M11: ink pens and eraser landed (#307) |
 | 2026-10-11 | trivial | M11: lasso, Add Pen, Ink to Shape and Ink Replay landed (#395) |
+
+## Typed extended-property library update — 2026-10-21
+
+`wordcraft-docx` exposes a bounded typed snapshot and patch for the existing eight
+retained extended properties. Native source validation, same-value preservation,
+copy isolation, repeated DOCX/Flat OPC saves and synthetic visible-content
+controls cover the admitted profile. Default-reader/writer losses remain explicit;
+no generic passthrough or desktop metadata API is added. See the
+[contract and evidence](file-format-parity.md#typed-retained-extended-properties--2026-10-21).
