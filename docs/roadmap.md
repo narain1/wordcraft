@@ -1,5 +1,7 @@
 # WordCraft roadmap: milestones and what's next
 
+> **Metadata update:** 2026-10-21 · typed core language survives DOCX and Flat OPC saves; library-only scope and synthetic evidence below.
+
 > **Preservation update:** 2026-10-21 · omitted DOCX character-default size keeps inheritance; explicit compatibility note and synthetic evidence below.
 
 > **Last reviewed:** 2026-10-10 · **Last updated:** 2026-10-12 · **Change:** minor (Czech proofing review fixes; previously minor: Portuguese proofing; previously minor: Polish interface and Polish proofing; previously trivial: M7: formatting revisions landed, #41; previously trivial: M5: Draw Table and Eraser landed, #303; previously minor: beta distance restated: ~15 points, ~150–230 h; previously: alpha gate checked: six core workflows pass; previously major: milestones moved here from ROADMAP.md; Current focus set from the re-measured gaps) · **Target:** Microsoft Word (Microsoft 365) for Mac 16.113.4
@@ -7,6 +9,14 @@
 Forward-looking plan. The summary is [`ROADMAP.md`](../ROADMAP.md); the ranked work list is
 [`gaps.md`](gaps.md); the numbers are in [`target-app-parity.md`](target-app-parity.md). Hours are
 Opus 5.5 agent wall-clock.
+
+## Core metadata library progress — 2026-10-21
+
+Typed core document language now survives native DOCX/Flat OPC read/write, with
+old-model compatibility and synthetic output controls. This is independent of run
+proofing language and does not add desktop commands or extend the Word 2003 XML
+converter. [Contract, evidence and lint limits](file-format-parity.md#core-document-language-metadata--2026-10-21)
+are recorded separately; readiness and remaining corpus work are unchanged.
 
 ## Current focus (toward beta, ~150–230 h)
 

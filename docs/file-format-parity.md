@@ -1,5 +1,7 @@
 # File-format parity with Microsoft Word
 
+> **Metadata update:** 2026-10-21 · typed core language survives DOCX and Flat OPC saves; library-only scope and synthetic evidence below.
+
 > **Preservation update:** 2026-10-21 · omitted DOCX character-default size keeps inheritance; explicit compatibility note and synthetic evidence below.
 
 > **Last reviewed:** 2026-10-11 · **Last updated:** 2026-10-14 · **Change:** trivial (every table style part round-trips, #714); previously trivial: VML freeforms read and kept on save; previously trivial: multi-paragraph field instructions no longer add blank lines; previously trivial: `flowChartOr` draws its circle and cross spokes, as in Word; previously trivial: RTF: Mac OS Roman and DOS text, #1653; previously trivial: VML text boxes keep their internal margins, fit to their text and vertical alignment; hidden drawings not shown; previously trivial: PDF export draws horizontal and vertical lines inside groups, #1474; previously trivial: symbol-font text exported as Unicode, #776; previously trivial: text-box margins, Resize shape to fit text and freeforms in groups, #743; previously trivial: formatted paste from the system clipboard's HTML and RTF, #687; previously trivial: independent complex-script formatting inheritance and round-trip regression tests; previously trivial: import/export fixes for TXT, RTF, ODT, HTML and LaTeX, #433–#440; previously major: first version; every format Word reads or writes, measured from the readers and writers on origin/main) · **Target:** Microsoft Word (Microsoft 365) for Mac 16.113.4, plus Word for Windows' extra formats
@@ -13,6 +15,46 @@ the work items are in [`gaps.md`](gaps.md).
 gives ~64%; we discount it to ~60% because DOCX fidelity has never been checked on real-world
 files. DOCX dominates the weight: a Word user sends and receives .docx; everything else is
 occasional.
+
+## Core document language metadata — 2026-10-21
+
+`wordcraft_doc::CoreProps.language` is a public `String`, defaulting to empty for
+new models and old serialized models that omit the field. It stores document
+metadata independently of run proofing language, text direction, font selection,
+and PDF language tags. It is not a language-tag validator.
+
+The existing DOCX core-property reader now retains `dc:language`; the writer emits
+it when nonempty. Existing core rules apply: the reader trims surrounding
+whitespace, the last matching element wins, and an empty value is omitted on
+write. XML escaping follows the existing core writer. Flat OPC preserves this
+package metadata through its existing DOCX conversion. The Word 2003 XML
+converter's separate property map still omits language; other format converters,
+extended/custom properties and desktop metadata commands are outside this change.
+The existing privacy option still removes creator/editor information without
+removing language.
+
+Two identical public DOCX fixture groups fail on the prior revision because
+language is lost, then pass with the change. They cover repeated saves, Flat OPC,
+empty/duplicate/escaped values and positive existing metadata/body controls. A
+separate typed-model test checks old-model deserialization and clone independence.
+All 146 document-model and 313 DOCX tests pass; the prior revision passes its 456
+existing tests with only the two new desired regressions excluded. The fixture
+with no language produces byte-identical DOCX output across revisions.
+
+A separate synthetic library integration checks body, header, table, styled and
+linked text plus an image through DOCX reopening, native PNG and PDF rendering at
+72, 144 and 300 DPI. All 144 bounded color-mask comparisons pass for each revision;
+all 24 cross-version PNGs are byte-identical. The absent-language package is
+byte-identical, and only `docProps/core.xml` changes in the language-bearing
+package. This establishes metadata preservation and unchanged output for the
+fixture, not a real-world corpus or cross-platform fidelity guarantee.
+
+Formatting checks pass. Strict native package Clippy still reports the same
+pre-existing `nonminimal_bool` diagnostic in `doc/src/math_linear.rs` and
+`collapsible_match` in `docx/src/read/story.rs` on both revisions. A scoped run
+allowing only those two diagnostic categories passes; it is not a strict-lint
+pass. No dependencies, lockfile, assets, desktop commands or readiness estimates
+change.
 
 ## Legacy DOC/DOT document properties
 

@@ -457,3 +457,30 @@ fn custom_props_set_get_remove() {
     assert!(!d.remove_custom_prop("other"));
     assert_eq!(d.custom_props.len(), 1);
 }
+
+#[test]
+fn core_language_is_typed_metadata_with_old_model_defaults() {
+    let old: CoreProps = serde_json::from_value(serde_json::json!({"title":"OldKeep", "revision":3})).unwrap();
+    assert!(old.language.is_empty());
+    assert_eq!(old.title, "OldKeep");
+    let mut properties = old.clone();
+    properties.language = "fr-CA".into();
+    let value = serde_json::to_value(&properties).unwrap();
+    assert_eq!(value["language"], "fr-CA");
+    let restored: CoreProps = serde_json::from_value(value).unwrap();
+    assert_eq!(restored, properties);
+    assert!(old.language.is_empty());
+    properties.language.clear();
+    assert_eq!(properties, old);
+    let mut document = Document::from_text("LanguageMetadataKeep");
+    document.core = restored;
+    let copy = document.clone();
+    document.core.language.clear();
+    assert_eq!(copy.core.language, "fr-CA");
+    assert_eq!(copy.body, document.body);
+    assert_eq!(copy.styles, document.styles);
+    let serialized = serde_json::to_value(&copy).unwrap();
+    let restored: Document = serde_json::from_value(serialized).unwrap();
+    assert_eq!(restored.core, copy.core);
+    assert_eq!(restored.body, copy.body);
+}

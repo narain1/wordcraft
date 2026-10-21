@@ -2966,3 +2966,83 @@ fn absent_character_size_keeps_style_and_complex_script_precedence() {
         }
     }
 }
+
+#[test]
+fn core_language_preserves_native_core_metadata_and_package_scope() {
+    let properties = r#"<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>TitleKeep</dc:title><dc:subject>SubjectKeep</dc:subject><dc:creator>AuthorKeep</dc:creator><cp:keywords>KeywordsKeep</cp:keywords><dc:description>DescriptionKeep</dc:description><cp:category>CategoryKeep</cp:category><cp:lastModifiedBy>EditorKeep</cp:lastModifiedBy><cp:revision>7</cp:revision><dcterms:created xsi:type="dcterms:W3CDTF">2020-01-02T03:04:05Z</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">2021-02-03T04:05:06Z</dcterms:modified><dc:language> fr-CA </dc:language></cp:coreProperties>"#;
+    let body = r#"<w:p><w:r><w:rPr><w:lang w:val="de-DE"/></w:rPr><w:t>CoreLanguageKeep</w:t></w:r></w:p>"#;
+    let mut document = wordcraft_docx::read(&docx(body, &[], &[("docProps/core.xml", properties)])).unwrap();
+    let c = &document.core;
+    assert_eq!(
+        (&*c.title, &*c.subject, &*c.creator, &*c.keywords, &*c.description),
+        ("TitleKeep", "SubjectKeep", "AuthorKeep", "KeywordsKeep", "DescriptionKeep")
+    );
+    assert_eq!(
+        (&*c.category, &*c.last_modified_by, c.revision, &*c.created, &*c.modified),
+        ("CategoryKeep", "EditorKeep", 7, "2020-01-02T03:04:05Z", "2021-02-03T04:05:06Z")
+    );
+    let core = document.core.clone();
+    let paragraphs = document.body.clone();
+    assert_eq!(paras(&document)[0].runs[0].props.lang.as_deref(), Some("de-DE"));
+    for cycle in 0..3 {
+        let bytes = wordcraft_docx::write(&document).unwrap();
+        let files = unzip(&bytes);
+        let xml = text(&files, "docProps/core.xml");
+        assert!(xml.contains("<dc:language>fr-CA</dc:language>"), "cycle {cycle}: {xml}");
+        assert!(text(&files, "_rels/.rels").contains("metadata/core-properties"));
+        assert!(text(&files, "[Content_Types].xml").contains("/docProps/core.xml"));
+        document = wordcraft_docx::read(&bytes).unwrap();
+        assert_eq!(document.core, core);
+        assert_eq!(document.body, paragraphs);
+        assert_eq!(document.plain_text(wordcraft_doc::StoryRef::Body), "CoreLanguageKeep");
+        let flat = wordcraft_docx::write_flat(&document).unwrap();
+        let reopened_flat = wordcraft_docx::read_xml(&flat).unwrap();
+        assert_eq!(reopened_flat.core, document.core);
+    }
+    document.settings.remove_personal_info = true;
+    let bytes = wordcraft_docx::write(&document).unwrap();
+    let xml = text(&unzip(&bytes), "docProps/core.xml");
+    assert!(xml.contains("<dc:language>fr-CA</dc:language>"));
+    assert!(!xml.contains("AuthorKeep") && !xml.contains("EditorKeep"));
+    let reopened = wordcraft_docx::read(&bytes).unwrap();
+    assert!(reopened.core.creator.is_empty() && reopened.core.last_modified_by.is_empty());
+    assert_eq!(reopened.body, document.body);
+}
+
+#[test]
+fn core_language_empty_duplicate_and_escaped_values_follow_core_rules() {
+    for (source, expected) in [
+        ("", None),
+        ("<dc:language/>", None),
+        ("<dc:language> \t\n </dc:language>", None),
+        ("<dc:language>en-US</dc:language><dc:language>ja-JP</dc:language>", Some("ja-JP")),
+        ("<dc:language>en-US</dc:language><dc:language/>", None),
+        ("<dc:language>x&amp;y&lt;z&gt;</dc:language>", Some("x&amp;y&lt;z&gt;")),
+    ] {
+        let properties = format!(
+            r#"<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>TitleKeep</dc:title>{source}</cp:coreProperties>"#
+        );
+        let mut document =
+            wordcraft_docx::read(&docx("<w:p><w:r><w:t>AbsentKeep</w:t></w:r></w:p>", &[], &[("docProps/core.xml", &properties)])).unwrap();
+        for _ in 0..2 {
+            let bytes = wordcraft_docx::write(&document).unwrap();
+            let xml = text(&unzip(&bytes), "docProps/core.xml");
+            match expected {
+                Some(value) => assert!(xml.contains(&format!("<dc:language>{value}</dc:language>")), "{source}: {xml}"),
+                None => assert!(!xml.contains("dc:language"), "{source}: {xml}"),
+            }
+            assert_eq!(xml.matches("<dc:language>").count(), usize::from(expected.is_some()));
+            let reopened = wordcraft_docx::read(&bytes).unwrap();
+            assert_eq!(reopened.core, document.core);
+            assert_eq!(reopened.core.title, "TitleKeep");
+            assert_eq!(reopened.body, document.body);
+            document = reopened;
+        }
+        if source.is_empty()
+            && let Ok(directory) = std::env::var("WORD_CORE_LANGUAGE_EVIDENCE_DIR")
+        {
+            std::fs::create_dir_all(&directory).unwrap();
+            std::fs::write(std::path::Path::new(&directory).join("absent-language.docx"), wordcraft_docx::write(&document).unwrap()).unwrap();
+        }
+    }
+}
