@@ -1,5 +1,7 @@
 # WordCraft roadmap: milestones and what's next
 
+> **Preservation update:** 2026-10-21 · omitted DOCX character-default size keeps inheritance; explicit compatibility note and synthetic evidence below.
+
 > **Last reviewed:** 2026-10-10 · **Last updated:** 2026-10-12 · **Change:** minor (Czech proofing review fixes; previously minor: Portuguese proofing; previously minor: Polish interface and Polish proofing; previously trivial: M7: formatting revisions landed, #41; previously trivial: M5: Draw Table and Eraser landed, #303; previously minor: beta distance restated: ~15 points, ~150–230 h; previously: alpha gate checked: six core workflows pass; previously major: milestones moved here from ROADMAP.md; Current focus set from the re-measured gaps) · **Target:** Microsoft Word (Microsoft 365) for Mac 16.113.4
 
 Forward-looking plan. The summary is [`ROADMAP.md`](../ROADMAP.md); the ranked work list is
@@ -13,7 +15,7 @@ Opus 5.5 agent wall-clock.
    fixes #155–#164) or add languages (nb, nn, he). Owner review needed.
 2. **DOCX real-world corpus** (gap #1, 30–50 h): collect openly licensed real-world .docx files,
    open/render/round-trip them, compare with Word locally, fix what breaks. Omitted/empty
-   paragraph defaults now have synthetic save/reopen coverage; the corpus gate remains open.
+   paragraph defaults and absent character-default size now have synthetic save/reopen coverage; the corpus gate remains open.
 3. **Preserve what we can't render** (gap #2, 10–15 h): remaining native ink forms and unsupported
    graphics survive a round trip. Drawing-level native ink now keeps its InkML and optional picture
    fallback alongside chart, SmartArt, OLE and drawing-canvas support.
@@ -74,6 +76,7 @@ languages, screen-reader access, ecosystem decisions (VBA, add-ins, cloud), an i
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-21 | minor | Omitted DOCX character-default size stays inherited across saves; imported implicit fallback changes from 10 to the native resolver's 11 pt. Explicit sizes and missing-styles 12 pt defaults remain unchanged; synthetic checks do not raise readiness estimates. |
 | 2026-10-12 | minor | Czech proofing review: short-word splits rank after deletion, NOSUGGEST excludes suggestions while accepting typed forms, affix comments apply only to headers, ratios keep spaces and repeated-word messages use Czech quotes; synthetic engine end-to-end and latency checks |
 | 2026-10-12 | minor | Czech spelling from the installed Hunspell dictionary, runtime-table suggestions and generic checks; Czech interface writes cs-CZ documents; no Czech hyphenation patterns bundled; estimates unchanged |
 | 2026-10-12 | minor | M15: Portuguese proofing (pt-BR spelling from the installed VERO dictionary, suggestions, grammar, hyphenation; Review › Language gains Português (Brasil)) |

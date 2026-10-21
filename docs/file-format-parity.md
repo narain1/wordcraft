@@ -1,5 +1,7 @@
 # File-format parity with Microsoft Word
 
+> **Preservation update:** 2026-10-21 · omitted DOCX character-default size keeps inheritance; explicit compatibility note and synthetic evidence below.
+
 > **Last reviewed:** 2026-10-11 · **Last updated:** 2026-10-14 · **Change:** trivial (every table style part round-trips, #714); previously trivial: VML freeforms read and kept on save; previously trivial: multi-paragraph field instructions no longer add blank lines; previously trivial: `flowChartOr` draws its circle and cross spokes, as in Word; previously trivial: RTF: Mac OS Roman and DOS text, #1653; previously trivial: VML text boxes keep their internal margins, fit to their text and vertical alignment; hidden drawings not shown; previously trivial: PDF export draws horizontal and vertical lines inside groups, #1474; previously trivial: symbol-font text exported as Unicode, #776; previously trivial: text-box margins, Resize shape to fit text and freeforms in groups, #743; previously trivial: formatted paste from the system clipboard's HTML and RTF, #687; previously trivial: independent complex-script formatting inheritance and round-trip regression tests; previously trivial: import/export fixes for TXT, RTF, ODT, HTML and LaTeX, #433–#440; previously major: first version; every format Word reads or writes, measured from the readers and writers on origin/main) · **Target:** Microsoft Word (Microsoft 365) for Mac 16.113.4, plus Word for Windows' extra formats
 
 Every format Word opens or saves, what WordCraft does with it, and how it's tested. Fidelity is the
@@ -114,6 +116,35 @@ register WordCraft for these types but never take over a default; File › Optio
 | Linux, BSD (deb, rpm, Flatpak, AppImage) | Word, ODT, RTF, Markdown, LaTeX, HTML, text (`MimeType=` in the desktop entry, AppStream `mediatype`) | Options button runs `xdg-mime default` for the Word, RTF and ODT types | Not from inside Flatpak (the sandbox can't change host defaults); a bare AppImage needs desktop integration first |
 | macOS | `CFBundleDocumentTypes` as Alternate handler (Word, ODT, RTF, Markdown, HTML, text) | Finder › Get Info › Open with › Change All (the Options page says so) | Apple events open the files (#27) |
 
+## Character-default size preservation
+An omitted document-default `w:sz` stays absent through repeated DOCX saves. The
+existing style resolver supplies 11 pt only when the applicable default, table,
+paragraph, character and direct properties supply no ordinary size. Missing
+`w:szCs` inherits the effective ordinary size; an explicit complex-script size
+remains independent. The writer continues to emit only explicit size properties.
+
+**Compatibility change:** files with a parsed styles part and no effective size
+previously acquired a reader-only 10 pt fallback. They now use the native resolver's
+11 pt policy. A missing styles part still starts from the existing 12 pt built-in
+defaults; explicit sizes and ordinary new-document defaults are unchanged. The
+shared reader also handles Flat OPC packages and converted Word 2003 XML: the
+same absent-size policy applies there. Word 2003 XML conversion creates a styles
+part even when its input has no styles node, so that case uses 11 pt rather than
+the missing-package-part 12 pt control. No format writer or XML conversion
+algorithm changes. The
+[public FontSize remarks](https://learn.microsoft.com/en-us/dotnet/api/documentformat.openxml.wordprocessing.fontsize?view=openxml-3.0.1)
+permit application choice when no hierarchy level provides a size. This is native
+self-consistency, not a claim that OOXML mandates 11 pt or that Word always uses it.
+
+`absent_character_default_size_survives_repeated_saves` and
+`absent_character_size_keeps_style_and_complex_script_precedence` cover absent
+containers, explicit 10/11/28 pt controls, three save/reopen cycles, unrelated
+properties, inherited/direct formatting, and implicit/explicit Flat OPC and Word
+2003 XML controls. Separate synthetic native rendering
+checks cover body/header/table text, explicit styles and a linked run before and
+after DOCX reopening, including PDF output at 72/144/300 DPI. These bounded checks
+do not close the real-world fidelity corpus or establish cross-platform font parity.
+
 ## Paragraph-default preservation
 The styles reader records whether `w:pPrDefault` exists. The writer keeps an omitted
 container omitted when its modeled properties are still empty. An explicitly empty
@@ -210,6 +241,7 @@ attributes inside stories and style or list definitions; a regenerated theme. Te
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-21 | minor | Omitted DOCX character-default size stays inherited across saves; imported implicit fallback changes from 10 to the native resolver's 11 pt. Explicit sizes and missing-styles 12 pt defaults remain unchanged; synthetic checks do not raise readiness estimates. |
 | 2026-10-13 | trivial | A cell's explicit top vertical alignment (`w:vAlign w:val="top"`) is kept on read and write and beats a table style that centres or bottom-aligns (#1288) |
 | 2026-10-14 | trivial | Row table border exceptions survive DOCX saves |
 | 2026-10-12 | trivial | Fields keep `w:dirty` through DOCX round trips — on buffered fields and range-field begin markers alike — and computing a result (Update Field, Update Table) clears it like Word's F9, so a generator's placeholder TOC still refreshes when Word opens the file until WordCraft replaces the placeholder (#877) |

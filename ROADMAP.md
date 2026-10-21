@@ -1,5 +1,7 @@
 # WordCraft roadmap
 
+> **Preservation update:** 2026-10-21 · omitted DOCX character-default size keeps inheritance; explicit compatibility note and synthetic evidence below.
+
 **Stage: alpha** · next: beta, ~15 points (60% → 75% ready for real work) and ~150–230 h away
 
 > **Last reviewed:** 2026-10-10 · **Last updated:** 2026-10-17 · **Change:** trivial (Language dialog keeps inherited proofing language and no-proof choices (#2717)); previously trivial (table style editor formats every part, #714); previously trivial: VML freeforms read and kept on save; previously trivial: progress log: consistent preferred cell widths; previously trivial: multi-paragraph field instructions no longer add blank lines; previously trivial: page-break-only list paragraphs hide their labels; previously trivial: progress log: grouped `flowChartOr` shapes draw their circle and crossing spokes; previously trivial: progress log: copies keep their formatting in other programs, #1523; previously trivial: progress log: privacy options on save, #1062; previously trivial: progress log: equation pictures in theme colours on Windows, #1002; previously trivial: symbol fonts, #776; previously trivial: the save prompt answers from the keyboard, #861; previously trivial: table column and row markers on the rulers, #700; previously trivial: table borders and the resize handle drag on the page, #217; previously trivial: formatting revisions landed, #41; previously trivial: Draw tab ink, #307, and Draw Table and Eraser, #303, landed: catalog 402/434; previously minor: readiness table with hours per audience; full number back to the additive weighted sum, 60%; mainstream and essentials numbers added; alpha gate checked; previously major: full re-measure against Word for Mac 16.113.4; restructured to the craftrules progress-docs standard) · **Target:** Microsoft Word (Microsoft 365) for Mac 16.113.4
@@ -136,6 +138,7 @@ Ranked, to beta (detail and remaining milestones in [docs/roadmap.md](docs/roadm
 
 | Date | What landed |
 | 2026-10-14 | DOCX row table border exceptions render and survive saving. Explicit cell borders win; a row exception does not change other rows. |
+| 2026-10-21 | DOCX character-default size preserves omission through repeated saves, using the existing resolver instead of materializing a reader-only 10 pt default; explicit sizes remain unchanged |
 | 2026-10-14 | Tab stops edited on the ruler: the corner selector picks Left/Center/Right/Decimal/Bar, a click sets a stop (Alt skips the snap), dragging moves it with a guide line and position tooltip, dragging off the ruler clears it; markers draw per kind and mirror for RTL; one `para.tabs` call and one undo step per gesture |
 | 2026-10-12 | Fields keep `w:dirty` through DOCX saves (#877): a begin marker flagged by a generator that couldn't compute a result (pandoc-style TOC placeholders) keeps the flag on open/save — as a buffered field or a range field — so Word still refreshes it on open; computing a result (Update Field, Update Table) clears it, like Word's F9 |
 |---|---|
@@ -404,6 +407,7 @@ Ranked, to beta (detail and remaining milestones in [docs/roadmap.md](docs/roadm
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-21 | minor | Omitted DOCX character-default size stays inherited across saves; imported implicit fallback changes from 10 to the native resolver's 11 pt. Explicit sizes and missing-styles 12 pt defaults remain unchanged; synthetic checks do not raise readiness estimates. |
 | 2026-10-17 | trivial | Language dialog keeps inherited proofing language and no-proof choices (#2717); readiness estimates unchanged |
 | 2026-10-14 | trivial | Progress log: row table border exceptions |
 | 2026-10-12 | minor | Czech proofing review: short-word splits rank after deletion, NOSUGGEST excludes suggestions while accepting typed forms, affix comments apply only to headers, ratios keep spaces and repeated-word messages use Czech quotes; synthetic engine end-to-end and latency checks |
