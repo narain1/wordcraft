@@ -4,6 +4,8 @@
 
 Recovery discovery no longer interrupts an explicitly created or opened document. Older copies remain in File › Recover, whose buttons use the interface palette. See [local recovery](recovery.md).
 
+> **Metadata update:** 2026-10-21 · typed core language survives DOCX and Flat OPC saves; library-only scope and synthetic evidence below.
+
 > **Preservation update:** 2026-10-21 · omitted DOCX character-default size keeps inheritance; explicit compatibility note and synthetic evidence below.
 
 > **Last reviewed:** 2026-10-10 · **Last updated:** 2026-10-17 · **Change:** trivial (Language dialog keeps inherited proofing language and no-proof choices (#2717)); previously trivial (VML freeforms read and kept on save; previously trivial: consistent preferred cell widths; previously trivial: multi-paragraph field instructions no longer add blank lines; previously trivial: page-break-only list paragraphs hide their labels; previously trivial: floating-table overlap ignores empty line-break lines; previously trivial: copies keep their formatting on the clipboard as HTML, #1523; previously trivial: sample-text formulas on Enter, #1067; previously trivial: #29: copied equations as MathML, OMML open as #1297, #816; previously trivial: the Font list no longer keeps every previewed font in memory, #848; previously trivial: table column and row markers on the rulers, #700; previously trivial: table borders and the resize handle drag on the page, #217; previously trivial: formatting revisions landed, #41; previously trivial: Draw Table and Eraser landed, #303; previously minor: beta distance restated: ~15 points, ~150–230 h; previously: first version; every known shortfall from the 2026-10-10 re-measure, ranked) · **Target:** Microsoft Word (Microsoft 365) for Mac 16.113.4
@@ -318,3 +320,13 @@ Four geometry-dependent regression controls request Source Sans 3 explicitly. Pl
 ## Library contribution update — 2026-10-21
 
 Within layout/PDF fidelity, preset-shape PDF outlines now explicitly use the raster renderer's round caps and joins. The original default mismatch is covered by an exported-stroke regression and a separate synthetic rendering comparison. The full layout gap remains open. This does not change arbitrary vector paths, shape-effect silhouettes, DOCX outline-width clamping or thick-ellipse self-overlap behavior; no new Word comparison or desktop measurement was performed.
+
+## Core metadata preservation update — 2026-10-21
+
+The lower-level DOCX model/read/write path now exposes typed core language, also
+preserved through Flat OPC. This closes that specific storage gap only: language
+tag validation, extended/custom metadata access, Word 2003 XML language conversion,
+PDF language tagging and desktop command coverage remain separate. Synthetic
+model, package and rendering controls are described in
+[file-format parity](file-format-parity.md#core-document-language-metadata--2026-10-21);
+the real-world corpus and overall format-fidelity gaps remain open.

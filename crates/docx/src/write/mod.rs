@@ -1252,6 +1252,7 @@ fn core_xml(doc: &Document) -> Vec<u8> {
         ("dc:creator", &creator),
         ("cp:keywords", &c.keywords),
         ("dc:description", &c.description),
+        ("dc:language", &c.language),
         ("cp:lastModifiedBy", &last_modified_by),
         ("cp:category", &c.category),
     ] {

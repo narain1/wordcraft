@@ -1,5 +1,7 @@
 # WordCraft roadmap
 
+> **Metadata update:** 2026-10-21 · typed core language survives DOCX and Flat OPC saves; library-only scope and synthetic evidence below.
+
 > **Preservation update:** 2026-10-21 · omitted DOCX character-default size keeps inheritance; explicit compatibility note and synthetic evidence below.
 
 **Stage: alpha** · next: beta, ~15 points (60% → 75% ready for real work) and ~150–230 h away
@@ -902,3 +904,13 @@ Footer page-table height and body wrapping are corrected. Other pagination gaps 
 ## Library contribution validation — 2026-10-21
 
 The PDF shape-stroke contribution aligns preset-shape line caps and joins with the native raster renderer. Its regression interprets actual exported PDF strokes for Rectangle, Ellipse and Line at four widths; all 39 original PDF tests and the added regression pass. This is a library correction, not a new desktop parity measurement or a change to the alpha stage. See [the bounded shape checks](docs/layout-parity.md#pdf-shape-stroke-contribution--2026-10-21).
+
+## Core metadata library update — 2026-10-21
+
+The public document model now retains core language through DOCX and Flat OPC
+read/write, using the existing core-property rules. Old models and absent-language
+packages retain their defaults/output. Native model/DOCX tests and bounded rendered
+controls pass; strict native lint retains documented pre-existing diagnostics.
+See [the exact contract and evidence](docs/file-format-parity.md#core-document-language-metadata--2026-10-21).
+This adds no desktop command or broader format/parity claim; alpha/readiness
+estimates remain unchanged.

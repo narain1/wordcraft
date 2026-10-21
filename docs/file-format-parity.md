@@ -2,6 +2,8 @@
 
 > **Last reviewed:** 2026-10-11 · **Last updated:** 2026-10-21 · **Change:** trivial (a document with many content controls saves in the time the controls take, #13; previously trivial: `majorBidi`/`minorBidi` theme fonts follow the settings' theme font language, as measured in Word; previously trivial: Word signature lines are kept on save, still signable; previously trivial: Times New Roman keeps Liberation Serif under the roman-font rule; previously trivial: shape gradients and transparency, #1500; previously trivial: a folder that keeps no Unix modes, such as a NAS share mounted by GVFS, still takes a save, #3003; previously trivial: a text frame in the paragraph defaults frames nothing, #2360; previously trivial: table style band sizes written, a style without them unbanded as in Word, #3415; previously trivial: HTML export writes ruby (furigana, phonetic guides) and HTML import reads it back, #1681; previously trivial: RTF import decodes the East Asian multibyte code pages, #1653; previously trivial: PDF export: lam-alef drawn as two glyphs at one x extracts in reading order, #2310; previously trivial: native .json stores pictures and kept parts as base64, #586 follow-up; previously trivial: ODT headers and footers read from each master page, #863; previously trivial: RTF import compares heading and code formatting with the file's stylesheet; previously trivial: text typed into a content control takes the control's formatting; localized placeholder styles recognised; previously trivial: forms protection keeps its content controls: no inserting, Properties or Remove Content Control; previously trivial: Word XML and web pages saved as `.doc` open by what they hold, #2853; previously trivial: a VML shape in a header cell is always placed on the page, user-checked in Word for Mac, #1775; previously trivial: `w:sym` characters keep their symbol font when the text's font changes and are written back as `w:sym`, #2036; previously trivial: RTF export writes sections (gap 19); previously trivial: ODT export writes sections (gap 19); previously trivial: two lines in one and horizontal in vertical (`w:eastAsianLayout`) kept on save; previously trivial: PDF outline targets follow leading page breaks; previously trivial: positional tabs `w:ptab` read and kept on save, #2367; previously trivial: DOCX: mixed right-to-left runs split and marked `w:rtl` with their language, #1543; previously trivial: `w:doNotTrackMoves` round-trips and turns move tracking off; previously trivial: legacy outline, shadow, emboss and imprint text effects drawn, #2534; previously trivial: DOCX glossary documents (building blocks) read, kept and written; previously trivial: cached field results keep their visible run formatting; previously trivial: cached REF results retain hyperlink destinations; previously trivial: CLI conversions can explicitly refresh fields; previously trivial: a copied equation also goes in the clipboard's MathML formats, #1297; previously trivial: a pasted HTML `<blockquote>` is an indented paragraph, not the Quote style, #1270); previously trivial: every table style part round-trips, #714; previously trivial: VML freeforms read and kept on save; previously trivial: multi-paragraph field instructions no longer add blank lines; previously trivial: `flowChartOr` draws its circle and cross spokes, as in Word; previously trivial: RTF: Mac OS Roman and DOS text, #1653; previously trivial: VML text boxes keep their internal margins, fit to their text and vertical alignment; hidden drawings not shown; previously trivial: PDF export draws horizontal and vertical lines inside groups, #1474; previously trivial: symbol-font text exported as Unicode, #776; previously trivial: text-box margins, Resize shape to fit text and freeforms in groups, #743; previously trivial: formatted paste from the system clipboard's HTML and RTF, #687; previously trivial: independent complex-script formatting inheritance and round-trip regression tests; previously trivial: import/export fixes for TXT, RTF, ODT, HTML and LaTeX, #433–#440; previously major: first version; every format Word reads or writes, measured from the readers and writers on origin/main) · **Target:** Microsoft Word (Microsoft 365) for Mac 16.113.4, plus Word for Windows' extra formats
 
+> **Metadata update:** 2026-10-21 · typed core language survives DOCX and Flat OPC saves; library-only scope and synthetic evidence below.
+
 > **Preservation update:** 2026-10-21 · omitted DOCX character-default size keeps inheritance; explicit compatibility note and synthetic evidence below.
 
 > **Last reviewed:** 2026-10-11 · **Last updated:** 2026-10-14 · **Change:** trivial (every table style part round-trips, #714); previously trivial: VML freeforms read and kept on save; previously trivial: multi-paragraph field instructions no longer add blank lines; previously trivial: `flowChartOr` draws its circle and cross spokes, as in Word; previously trivial: RTF: Mac OS Roman and DOS text, #1653; previously trivial: VML text boxes keep their internal margins, fit to their text and vertical alignment; hidden drawings not shown; previously trivial: PDF export draws horizontal and vertical lines inside groups, #1474; previously trivial: symbol-font text exported as Unicode, #776; previously trivial: text-box margins, Resize shape to fit text and freeforms in groups, #743; previously trivial: formatted paste from the system clipboard's HTML and RTF, #687; previously trivial: independent complex-script formatting inheritance and round-trip regression tests; previously trivial: import/export fixes for TXT, RTF, ODT, HTML and LaTeX, #433–#440; previously major: first version; every format Word reads or writes, measured from the readers and writers on origin/main) · **Target:** Microsoft Word (Microsoft 365) for Mac 16.113.4, plus Word for Windows' extra formats
@@ -26,6 +28,46 @@ its existing image fallback.
 > **Comment command update:** 2026-10-14 · malformed explicit IDs rejected; synthetic refusal, undo/redo and DOCX save/reopen checks (#1690 finding 3). Readiness estimates unchanged.
 
 Comment commands reject explicit negative, floating-point and wrong-type IDs before editing or using the caret. Valid Delete, Resolve, Reply and Edit operations, including omitted caret IDs for Delete/Resolve, have undo/redo and two synthetic DOCX save/reopen checks preserving body and comment data (`crates/engine/tests/comment_ids.rs`). This does not extend the modern-comment format coverage listed below.
+
+## Core document language metadata — 2026-10-21
+
+`wordcraft_doc::CoreProps.language` is a public `String`, defaulting to empty for
+new models and old serialized models that omit the field. It stores document
+metadata independently of run proofing language, text direction, font selection,
+and PDF language tags. It is not a language-tag validator.
+
+The existing DOCX core-property reader now retains `dc:language`; the writer emits
+it when nonempty. Existing core rules apply: the reader trims surrounding
+whitespace, the last matching element wins, and an empty value is omitted on
+write. XML escaping follows the existing core writer. Flat OPC preserves this
+package metadata through its existing DOCX conversion. The Word 2003 XML
+converter's separate property map still omits language; other format converters,
+extended/custom properties and desktop metadata commands are outside this change.
+The existing privacy option still removes creator/editor information without
+removing language.
+
+Two identical public DOCX fixture groups fail on the prior revision because
+language is lost, then pass with the change. They cover repeated saves, Flat OPC,
+empty/duplicate/escaped values and positive existing metadata/body controls. A
+separate typed-model test checks old-model deserialization and clone independence.
+All 146 document-model and 313 DOCX tests pass; the prior revision passes its 456
+existing tests with only the two new desired regressions excluded. The fixture
+with no language produces byte-identical DOCX output across revisions.
+
+A separate synthetic library integration checks body, header, table, styled and
+linked text plus an image through DOCX reopening, native PNG and PDF rendering at
+72, 144 and 300 DPI. All 144 bounded color-mask comparisons pass for each revision;
+all 24 cross-version PNGs are byte-identical. The absent-language package is
+byte-identical, and only `docProps/core.xml` changes in the language-bearing
+package. This establishes metadata preservation and unchanged output for the
+fixture, not a real-world corpus or cross-platform fidelity guarantee.
+
+Formatting checks pass. Strict native package Clippy still reports the same
+pre-existing `nonminimal_bool` diagnostic in `doc/src/math_linear.rs` and
+`collapsible_match` in `docx/src/read/story.rs` on both revisions. A scoped run
+allowing only those two diagnostic categories passes; it is not a strict-lint
+pass. No dependencies, lockfile, assets, desktop commands or readiness estimates
+change.
 
 ## Legacy DOC/DOT document properties
 

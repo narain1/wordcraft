@@ -1454,6 +1454,7 @@ impl Reader<'_> {
                 "dc:creator" => c.creator = t,
                 "cp:keywords" => c.keywords = t,
                 "dc:description" => c.description = t,
+                "dc:language" => c.language = t,
                 "cp:lastModifiedBy" => c.last_modified_by = t,
                 "cp:revision" => c.revision = u32_of(&t).unwrap_or(0),
                 "dcterms:created" => c.created = t,

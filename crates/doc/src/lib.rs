@@ -479,6 +479,8 @@ pub struct CoreProps {
     pub subject: String,
     pub creator: String,
     pub keywords: String,
+    /// Document metadata language, independent of text proofing language; empty means absent.
+    pub language: String,
     pub description: String,
     pub category: String,
     pub last_modified_by: String,
